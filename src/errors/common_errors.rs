@@ -96,7 +96,7 @@ impl Error {
                 (StatusCode::INTERNAL_SERVER_ERROR, 5001)
             }
             Error::Wither(_) => (StatusCode::INTERNAL_SERVER_ERROR, 5002),
-            Error::SeaOrm((_)) => (StatusCode::INTERNAL_SERVER_ERROR, 5002),
+            Error::SeaOrm(_) => (StatusCode::INTERNAL_SERVER_ERROR, 5002),
             Error::Mongo(_) => (StatusCode::INTERNAL_SERVER_ERROR, 5003),
             Error::SerializeMongoResponse(_) => (StatusCode::INTERNAL_SERVER_ERROR, 5004),
             Error::RunSyncTask(_) => (StatusCode::INTERNAL_SERVER_ERROR, 5005),

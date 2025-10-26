@@ -1,19 +1,11 @@
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation, Algorithm};
-use serde::{Deserialize, Serialize};
 use crate::structs::token_claims::{TokenClaims, UserRole};
 use axum::{
-    extract::{FromRef, FromRequestParts},
-    http::{request::Parts, StatusCode},
+    http::{ StatusCode},
     response::{IntoResponse, Response},
 };
-use std::marker::PhantomData;
-use async_trait::async_trait;
-use axum_extra::{
-    headers::{authorization::Bearer, Authorization},
-    TypedHeader,
-};
-use crate::errors::common_errors::Error;
+
 #[derive(Clone)]
 pub struct JwtManager {
     secret_key: String,
