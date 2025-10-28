@@ -18,6 +18,7 @@ contract DataStorage {
     error InvalidRole();
     
     address public owner;
+    address public factoryContract;
     
     enum Role {
         NONE,           
@@ -79,10 +80,12 @@ contract DataStorage {
         _;
     }
     
-    constructor() {
-        owner = msg.sender;
-        userRoles[msg.sender] = Role.ADMIN;
-        isRegistered[msg.sender] = true;
+    constructor(address initialOwner) {
+        require(initialOwner != address(0), "Invalid owner address");
+        owner = initialOwner;
+        factoryContract = msg.sender; // Save factory contract address
+        userRoles[initialOwner] = Role.ADMIN;
+        isRegistered[initialOwner] = true;
     }
     
     function changeOwner(address _newOwner) external onlyOwner {
@@ -94,7 +97,9 @@ contract DataStorage {
         emit OwnerChanged(oldOwner, _newOwner);
     }
     
-    function authorizeContract(address _contract) external onlyOwner {
+    function authorizeContract(address _contract) external {
+        // Allow owner or factory contract to authorize
+        if (msg.sender != owner && msg.sender != factoryContract) revert Unauthorized();
         if (_contract == address(0)) revert InvalidAddress();
         authorizedContracts[_contract] = true;
         emit ContractAuthorized(_contract);

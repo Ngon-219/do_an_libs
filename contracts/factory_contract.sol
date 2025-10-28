@@ -34,24 +34,32 @@ contract FactoryContract {
     constructor() {
         deployer = msg.sender;
         
-        dataStorage = new DataStorage();
+        // Deploy DataStorage với owner tạm thời là FactoryContract (address(this))
+        // để có thể authorize các contracts trong constructor
+        dataStorage = new DataStorage(address(this));
         emit DataStorageDeployed(address(dataStorage));
         
+        // Deploy IssuanceOfDocument
         issuanceContract = new IssuanceOfDocument(address(dataStorage));
         dataStorage.authorizeContract(address(issuanceContract));
         emit IssuanceContractDeployed(address(issuanceContract));
         emit ContractAuthorized(address(issuanceContract));
         
+        // Deploy DocumentNFT với owner ban đầu là FactoryContract
         documentNFT = new DocumentNFT(address(dataStorage), address(this));
         dataStorage.authorizeContract(address(documentNFT));
         emit DocumentNFTDeployed(address(documentNFT));
         emit ContractAuthorized(address(documentNFT));
         
+        // Transfer ownership của DocumentNFT cho IssuanceContract để nó có thể mint NFT
         documentNFT.transferOwnership(address(issuanceContract));
         
+        // Set DocumentNFT address vào IssuanceContract
         issuanceContract.setDocumentNFT(address(documentNFT));
         
-        dataStorage.assignRole(msg.sender, DataStorage.Role.ADMIN);
+        // Transfer ownership của DataStorage cho deployer (user từ private key)
+        // Bây giờ deployer có full control của DataStorage
+        dataStorage.changeOwner(msg.sender);
     }
 
     modifier onlyDeployer() {

@@ -1,4 +1,31 @@
-import { ethers } from "hardhat";
+import { ethers, run, network } from "hardhat";
+
+// Helper function to verify contract on Etherscan
+async function verifyContract(
+    address: string,
+    constructorArguments: any[] = [],
+    contractName?: string
+) {
+    console.log(`🔍 Verifying ${contractName || 'contract'} at ${address}...`);
+    try {
+        await run("verify:verify", {
+            address: address,
+            constructorArguments: constructorArguments,
+        });
+        console.log(`   ✅ Verified successfully!`);
+    } catch (error: any) {
+        if (error.message.toLowerCase().includes("already verified")) {
+            console.log(`   ℹ️  Already verified`);
+        } else {
+            console.log(`   ⚠️  Verification failed: ${error.message}`);
+        }
+    }
+}
+
+// Delay function for waiting
+async function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 async function main() {
     console.log("=".repeat(70));
@@ -216,6 +243,82 @@ async function main() {
         console.log("    → View NFTs on OpenSea or other NFT marketplaces");
         console.log("-".repeat(70));
         console.log();
+
+        // Verify contracts on Sepolia
+        const networkName = network.name;
+        if (networkName === "sepolia") {
+            console.log("=".repeat(70));
+            console.log("🔍 VERIFYING CONTRACTS ON ETHERSCAN");
+            console.log("=".repeat(70));
+            console.log();
+            console.log("⏳ Waiting 30 seconds for Etherscan to index contracts...");
+            await delay(30000);
+            console.log();
+
+            // 1. Verify FactoryContract (no constructor args)
+            console.log("[1/6] Verifying FactoryContract...");
+            await verifyContract(
+                deployedContracts["FactoryContract"],
+                [],
+                "FactoryContract"
+            );
+            console.log();
+
+            // 2. Verify DataStorage (constructor: address initialOwner)
+            // Note: initialOwner was FactoryContract, then transferred to deployer
+            console.log("[2/6] Verifying DataStorage...");
+            await verifyContract(
+                deployedContracts["DataStorage"],
+                [deployedContracts["FactoryContract"]], // initialOwner = FactoryContract (later transferred)
+                "DataStorage"
+            );
+            console.log();
+
+            // 3. Verify IssuanceOfDocument (constructor: address _dataStorage)
+            console.log("[3/6] Verifying IssuanceOfDocument...");
+            await verifyContract(
+                deployedContracts["IssuanceOfDocument"],
+                [deployedContracts["DataStorage"]],
+                "IssuanceOfDocument"
+            );
+            console.log();
+
+            // 4. Verify DocumentNFT (constructor: address _dataStorage, address initialOwner)
+            // Note: initialOwner was FactoryContract, then transferred to IssuanceContract
+            console.log("[4/6] Verifying DocumentNFT...");
+            await verifyContract(
+                deployedContracts["DocumentNFT"],
+                [deployedContracts["DataStorage"], deployedContracts["FactoryContract"]], // initialOwner = FactoryContract (later transferred)
+                "DocumentNFT"
+            );
+            console.log();
+
+            // 5. Verify StudentViolation (constructor: address _dataStorage)
+            console.log("[5/6] Verifying StudentViolation...");
+            await verifyContract(
+                deployedContracts["StudentViolation"],
+                [deployedContracts["DataStorage"]],
+                "StudentViolation"
+            );
+            console.log();
+
+            // 6. Verify VotingContract (constructor: address _dataStorage)
+            console.log("[6/6] Verifying VotingContract...");
+            await verifyContract(
+                deployedContracts["VotingContract"],
+                [deployedContracts["DataStorage"]],
+                "VotingContract"
+            );
+            console.log();
+
+            console.log("=".repeat(70));
+            console.log("✅ CONTRACT VERIFICATION COMPLETED!");
+            console.log("=".repeat(70));
+            console.log();
+            console.log("🔗 View contracts on Etherscan:");
+            console.log(`   https://sepolia.etherscan.io/address/${deployedContracts["FactoryContract"]}`);
+            console.log();
+        }
 
         console.log("=".repeat(70));
         console.log("🎉 DEPLOYMENT COMPLETED SUCCESSFULLY!");
